@@ -41,7 +41,7 @@ const RoleBanner = ({ userRole }) => {
                     Limited Access
                 </div>
                 <div style={{ fontSize: '11px', color: '#ad6800' }}>
-                    Viewer permissions only
+                    Viewer permissions
                 </div>
             </div>
         </div>
