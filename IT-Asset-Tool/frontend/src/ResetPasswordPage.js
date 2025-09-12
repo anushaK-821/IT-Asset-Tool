@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+
 import { message } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+
 
 const ResetPasswordPage = () => {
     const [password, setPassword] = useState('');
@@ -213,7 +217,7 @@ const ResetPasswordPage = () => {
         }
 
         try {
-            await axios.post('http://localhost:5000/api/reset-password', {
+            await axios.post(`${API_BASE_URL}/api/reset-password`, {
                 email,
                 token,
                 newPassword: password,

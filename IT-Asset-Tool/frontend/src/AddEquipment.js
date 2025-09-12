@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+
 import { Form, Input, Button, Select, message, Row, Col, Card, Typography, DatePicker } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
 import './styles.css';
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+
 
 const { Option } = Select;
 const { Title } = Typography;
@@ -24,9 +28,9 @@ const AddEquipment = () => {
     const prefix = cat ? cat.substring(0, 3).toUpperCase() : 'OTH';
     try {
       const response = await axios.get(
-        `http://localhost:5000/api/equipment/count/${encodeURIComponent(cat)}`,
-        { headers: getAuthHeader() }
-      );
+          `${API_BASE_URL}/api/equipment/count/${encodeURIComponent(cat)}`,
+          { headers: getAuthHeader() }
+        );
       const count = response.data.count || 0;
       const newIdNumber = (count + 1).toString().padStart(3, '0');
       return `${prefix}-${newIdNumber}-${Date.now().toString().slice(-5)}`;
@@ -62,7 +66,7 @@ const AddEquipment = () => {
       delete finalValues.department;
       delete finalValues.damageDescription;
 
-      await axios.post('http://localhost:5000/api/equipment', finalValues, { headers: getAuthHeader() });
+  await axios.post(`${API_BASE_URL}/api/equipment`, finalValues, { headers: getAuthHeader() });
       message.success('Equipment added successfully!');
       form.resetFields();
       setCategory('');

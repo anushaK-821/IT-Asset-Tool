@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Table, Tag, Typography, Modal, Button, Space, Form, Input, message, Dropdown, Popconfirm, Menu, DatePicker, Row, Col, Select } from 'antd';
 import axios from 'axios';
+
 import {
   EyeOutlined,
   MoreOutlined,
@@ -13,6 +14,7 @@ import {
 } from '@ant-design/icons';
 import moment from 'moment';
 import './styles.css';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -264,7 +266,7 @@ const InUse = ({ user }) => {
 
   const fetchInUseAssets = useCallback(async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/equipment', { headers: getAuthHeader() });
+  const response = await axios.get(`${API_BASE_URL}/api/equipment`, { headers: getAuthHeader() });
       const inUseAssets = response.data.filter((item) => item.status === 'In Use');
       setData(inUseAssets);
       setFilteredData(inUseAssets);
@@ -349,7 +351,7 @@ const InUse = ({ user }) => {
         if (payloadToSend[k] === "") payloadToSend[k] = null;
 
       await axios.put(
-        `http://localhost:5000/api/equipment/${selectedAsset._id}`,
+  `${API_BASE_URL}/api/equipment/${selectedAsset._id}`,
         payloadToSend,
         { headers: getAuthHeader() }
       );
@@ -383,7 +385,7 @@ const InUse = ({ user }) => {
   const handleMoveStatus = async (record, newStatus) => {
     try {
       await axios.put(
-        `http://localhost:5000/api/equipment/${record._id}`,
+  `${API_BASE_URL}/api/equipment/${record._id}`,
         { status: newStatus },
         { headers: getAuthHeader() }
       );

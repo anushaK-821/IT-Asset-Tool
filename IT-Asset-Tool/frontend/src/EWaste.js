@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+
 import { Table, Typography, message, Input, Space, Popconfirm, Button } from 'antd';
 import { DeleteOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import moment from 'moment';
 import './styles.css'; // Import CSS with your layout styles
 // import { validateSearchText } from './validation'; // Use if you want custom search validation
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
 const { Title } = Typography;
 const { Search } = Input;
@@ -27,7 +29,7 @@ const EWaste = ({ user }) => {
 
     const fetchEWasteAssets = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/equipment', {
+            const response = await axios.get(`${API_BASE_URL}/api/equipment`, {
                 headers: getAuthHeader(),
             });
             const ewasteAssets = response.data.filter(item => item.status === 'E-Waste');
@@ -64,7 +66,7 @@ const EWaste = ({ user }) => {
 
     const handleDelete = async (record) => {
         try {
-            await axios.put(`http://localhost:5000/api/equipment/${record._id}`, {
+            await axios.put(`${API_BASE_URL}/api/equipment/${record._id}`, {
                 status: 'Removed',
                 removalDate: moment().toISOString(),
                 originalStatus: 'E-Waste',
