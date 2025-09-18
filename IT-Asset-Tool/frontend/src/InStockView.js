@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+
 import {
   Button,
   Modal,
@@ -29,6 +30,7 @@ import {
 import moment from 'moment';
 import './styles.css';
 
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
 const { Text, Title } = Typography;
 const { Option } = Select;
@@ -155,7 +157,7 @@ const InStockView = ({ user }) => {
   // Fetch in-stock assets from API
   const fetchInStockAssets = useCallback(async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/equipment', {
+  const response = await axios.get(`${API_BASE_URL}/api/equipment`, {
         headers: getAuthHeader(),
       });
       const inStockAssets = response.data.filter((item) => item.status === 'In Stock');
@@ -208,7 +210,7 @@ const InStockView = ({ user }) => {
       const values = await form.validateFields();
       const updatedData = { ...values, status: 'In Use' };
       await axios.put(
-        `http://localhost:5000/api/equipment/${selectedEquipment._id}`,
+  `${API_BASE_URL}/api/equipment/${selectedEquipment._id}`,
         updatedData,
         { headers: getAuthHeader() }
       );
@@ -232,7 +234,7 @@ const InStockView = ({ user }) => {
   const handleMoveStatus = async (record, newStatus) => {
     try {
       await axios.put(
-        `http://localhost:5000/api/equipment/${record._id}`,
+  `${API_BASE_URL}/api/equipment/${record._id}`,
         { status: newStatus },
         { headers: getAuthHeader() }
       );
@@ -274,7 +276,7 @@ const InStockView = ({ user }) => {
 
 
       await axios.put(
-        `http://localhost:5000/api/equipment/${selectedEditAsset._id}`,
+  `${API_BASE_URL}/api/equipment/${selectedEditAsset._id}`,
         updatedAsset,
         { headers: getAuthHeader() }
       );

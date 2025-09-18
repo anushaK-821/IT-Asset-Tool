@@ -1,504 +1,417 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  Select,
+  message,
+  Card,
+  Typography,
+  Popconfirm,
+  Space
+} from 'antd';
+import {
+  PlusOutlined,
+  DeleteOutlined,
+  EditOutlined
+} from '@ant-design/icons';
 import axios from 'axios';
-import { message } from 'antd';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
+import './styles.css';
 
-const ResetPasswordPage = () => {
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [resetButtonHovered, setResetButtonHovered] = useState(false);
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
-    // Screen size tracking
-    const [screenSize, setScreenSize] = useState({
-        width: window.innerWidth,
-        height: window.innerHeight
-    });
+const { Title } = Typography;
+const { Option } = Select;
 
-    const canvasRef = useRef(null);
-    const mouse = useRef({ x: null, y: null, radius: 150 });
-    const navigate = useNavigate();
-    
-    // Get token and email from URL parameters
-    const [searchParams] = useSearchParams();
-    const token = searchParams.get('token');
-    const email = searchParams.get('email');
+const roles = [
+  { value: 'Admin', label: 'Admin' },
+  { value: 'Editor', label: 'Editor' },
+  { value: 'Viewer', label: 'Viewer' }
+];
 
-    // Responsive breakpoints
-    const isMobile = screenSize.width <= 768;
-    const isTablet = screenSize.width > 768 && screenSize.width <= 1024;
-    const isSmallMobile = screenSize.width <= 480;
-
-    // Handle screen resize
-    useEffect(() => {
-        const handleResize = () => {
-            setScreenSize({
-                width: window.innerWidth,
-                height: window.innerHeight
-            });
-        };
-
-        window.addEventListener('resize', handleResize);
-        window.addEventListener('orientationchange', handleResize);
-        return () => {
-            window.removeEventListener('resize', handleResize);
-            window.removeEventListener('orientationchange', handleResize);
-        };
-    }, []);
-
-    // Canvas animation (exactly the same as login page)
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        let animationFrameId;
-        let particlesArray = [];
-
-        const setCanvasSize = () => {
-            if (canvas.parentElement) {
-                canvas.width = canvas.parentElement.offsetWidth;
-                canvas.height = canvas.parentElement.offsetHeight;
-            }
-        };
-
-        class Particle {
-            constructor(x, y, directionX, directionY, size, color) {
-                this.x = x;
-                this.y = y;
-                this.directionX = directionX;
-                this.directionY = directionY;
-                this.size = size;
-                this.color = color;
-                this.baseSize = size;
-                this.originalColor = color;
-            }
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false);
-                ctx.fillStyle = this.color;
-                ctx.fill();
-            }
-            update() {
-                if (this.x + this.size > canvas.width || this.x - this.size < 0) this.directionX = -this.directionX;
-                if (this.y + this.size > canvas.height || this.y - this.size < 0) this.directionY = -this.directionY;
-                this.x += this.directionX;
-                this.y += this.directionY;
-
-                if (mouse.current.x && mouse.current.y) {
-                    let dx = mouse.current.x - this.x;
-                    let dy = mouse.current.y - this.y;
-                    let distance = Math.sqrt(dx * dx + dy * dy);
-
-                    if (distance < mouse.current.radius + this.size) {
-                        if (this.size < this.baseSize * 2) {
-                            this.size += 0.5;
-                        }
-                    } else if (this.size > this.baseSize) {
-                        this.size -= 0.1;
-                    }
-                } else if (this.size > this.baseSize) {
-                    this.size -= 0.1;
-                }
-                this.draw();
-            }
-        }
-
-        function init() {
-            particlesArray = [];
-            const numberOfParticles = isMobile ? 
-                Math.min((canvas.width * canvas.height) / 15000, 20) : 
-                Math.min((canvas.width * canvas.height) / 7000, 50);
-            const baseColors = ['rgba(255, 255, 255, 0.5)', 'rgba(74, 144, 226, 0.6)', 'rgba(208, 2, 27, 0.6)'];
-
-            for (let i = 0; i < numberOfParticles; i++) {
-                const size = (Math.random() * 1.5) + 0.8;
-                const x = (Math.random() * canvas.width);
-                const y = (Math.random() * canvas.height);
-                const directionX = (Math.random() * 0.6) - 0.3;
-                const directionY = (Math.random() * 0.6) - 0.3;
-                const color = baseColors[Math.floor(Math.random() * baseColors.length)];
-
-                particlesArray.push(new Particle(x, y, directionX, directionY, size, color));
-            }
-        }
-
-        function connect() {
-            const maxDistance = isMobile ? 80 : 120;
-            for (let a = 0; a < particlesArray.length; a++) {
-                for (let b = a; b < particlesArray.length; b++) {
-                    const dx = particlesArray[a].x - particlesArray[b].x;
-                    const dy = particlesArray[a].y - particlesArray[b].y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-
-                    if (distance < maxDistance) {
-                        let opacityValue = 1 - (distance / maxDistance);
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${opacityValue * 0.4})`;
-                        ctx.lineWidth = 1;
-                        ctx.beginPath();
-                        ctx.moveTo(particlesArray[a].x, particlesArray[a].y);
-                        ctx.lineTo(particlesArray[b].x, particlesArray[b].y);
-                        ctx.stroke();
-                    }
-                }
-            }
-        }
-
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particlesArray.forEach(p => p.update());
-            if (!isMobile) connect();
-            animationFrameId = requestAnimationFrame(animate);
-        }
-
-        const handleCanvasResize = () => {
-            setCanvasSize();
-            init();
-        };
-        const handleMouseMove = (event) => {
-            if (!isMobile) {
-                mouse.current.x = event.x;
-                mouse.current.y = event.y;
-            }
-        };
-        const handleMouseOut = () => {
-            mouse.current.x = null;
-            mouse.current.y = null;
-        };
-
-        setCanvasSize();
-        init();
-        animate();
-        window.addEventListener('resize', handleCanvasResize);
-        if (!isMobile) {
-            canvas.addEventListener('mousemove', handleMouseMove);
-            canvas.addEventListener('mouseout', handleMouseOut);
-        }
-
-        return () => {
-            window.removeEventListener('resize', handleCanvasResize);
-            if (!isMobile) {
-                canvas.removeEventListener('mousemove', handleMouseMove);
-                canvas.removeEventListener('mouseout', handleMouseOut);
-            }
-            cancelAnimationFrame(animationFrameId);
-        };
-    }, [isMobile]);
-
-    const handleResetPassword = async (e) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setError('');
-
-        // Validation
-        if (!password || !confirmPassword) {
-            setError('Please fill in all fields.');
-            setIsLoading(false);
-            return;
-        }
-
-        if (password !== confirmPassword) {
-            setError('Passwords do not match.');
-            setIsLoading(false);
-            return;
-        }
-
-        if (password.length < 6) {
-            setError('Password must be at least 6 characters long.');
-            setIsLoading(false);
-            return;
-        }
-
-        try {
-            await axios.post('http://localhost:5000/api/reset-password', {
-                email,
-                token,
-                newPassword: password,
-            });
-            message.success('Password reset successfully! You can now log in.');
-            setTimeout(() => {
-                navigate('/login');
-            }, 2000);
-        } catch (err) {
-            const errorMessage = err.response?.data?.message || 'Failed to reset password. Please try again.';
-            setError(errorMessage);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // Complete Responsive Styles (exactly the same as login page)
-    const styles = {
-        // Main container with proper viewport handling
-        container: {
-            display: 'flex',
-            flexDirection: isMobile ? 'column' : 'row',
-            width: '100vw',
-            height: '100vh',
-            maxWidth: '100%',
-            maxHeight: '100%',
-            overflow: 'hidden',
-            fontFamily: "'Quicksand', sans-serif",
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            margin: 0,
-            padding: 0,
-            boxSizing: 'border-box'
-        },
-
-        // Left panel
-        leftPanel: {
-            position: 'relative',
-            flex: isMobile ? '0 0 35vh' : '1 1 50%',
-            background: '#0d1a3a',
-            overflow: 'hidden',
-            minHeight: isMobile ? '35vh' : '100vh'
-        },
-
-        // Canvas
-        canvas: {
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            zIndex: 1
-        },
-
-        // Logo container
-        logoContainer: {
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 2,
-            textAlign: 'center',
-            color: 'white',
-            padding: isSmallMobile ? '15px' : '20px',
-            width: '90%',
-            maxWidth: '400px'
-        },
-
-        // Logo
-        logo: {
-            maxWidth: isSmallMobile ? '140px' : isMobile ? '180px' : '280px',
-            width: '100%',
-            height: 'auto',
-            marginBottom: '10px',
-            display: 'block'
-        },
-
-        // Subtitle
-        subtitle: {
-            color: '#FFFFFF',
-            opacity: 0.8,
-            fontSize: isSmallMobile ? '10px' : isMobile ? '12px' : '14px',
-            fontWeight: '500',
-            lineHeight: 1.3
-        },
-
-        // Right panel
-        rightPanel: {
-            flex: isMobile ? '1 1 65vh' : '1 1 50%',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: '#F1F1F1',
-            padding: isSmallMobile ? '10px' : isMobile ? '15px' : '20px',
-            boxSizing: 'border-box',
-            overflow: 'auto'
-        },
-
-        // Form container
-        formContainer: {
-            backgroundColor: '#FFFFFF',
-            padding: isSmallMobile ? '1.2rem' : isMobile ? '1.5rem' : '2.5rem',
-            borderRadius: '16px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-            width: '100%',
-            maxWidth: isSmallMobile ? '100%' : '400px',
-            textAlign: 'center',
-            boxSizing: 'border-box'
-        },
-
-        // Heading
-        heading: {
-            color: '#2C4B84',
-            fontSize: isSmallMobile ? '14px' : isMobile ? '16px' : '18px',
-            fontWeight: '700',
-            marginBottom: isMobile ? '1.5rem' : '2rem',
-            margin: '0 0 2rem 0'
-        },
-
-        // Input container
-        inputContainer: {
-            marginBottom: '1.2rem',
-            position: 'relative',
-            textAlign: 'left'
-        },
-
-        // Label
-        label: {
-            display: 'block',
-            textAlign: 'left',
-            color: '#6C727F',
-            fontSize: '12px',
-            fontWeight: '500',
-            marginBottom: '0.5rem'
-        },
-
-        // Password input with focus styles
-        passwordInput: {
-            padding: isSmallMobile ? '10px 40px 10px 12px' : '12px 45px 12px 15px',
-            width: '100%',
-            height: isSmallMobile ? '40px' : '44px',
-            borderRadius: '8px',
-            border: '1px solid #D5D5D5',
-            boxSizing: 'border-box',
-            fontSize: '14px',
-            color: '#000929',
-            outline: 'none',
-            transition: 'border-color 0.3s ease, box-shadow 0.3s ease'
-        },
-
-        // Eye icon
-        eyeIcon: {
-            position: 'absolute',
-            right: '15px',
-            top: '70%',
-            transform: 'translateY(-50%)',
-            cursor: 'pointer',
-            color: '#6C727F',
-            fontSize: '16px',
-            zIndex: 2,
-            padding: '2px'
-        },
-
-        // Error message
-        error: {
-            color: '#D5292B',
-            fontSize: '12px',
-            textAlign: 'center',
-            margin: '0 0 1rem 0',
-            minHeight: '15px'
-        },
-
-        // Primary button
-        primaryButton: {
-            width: '100%',
-            padding: isSmallMobile ? '10px' : '12px',
-            border: 'none',
-            borderRadius: '8px',
-            backgroundColor: resetButtonHovered ? '#1d54b8' : '#296bd5ff',
-            color: 'white',
-            fontSize: '14px',
-            fontWeight: '700',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            transition: 'all 0.3s ease',
-            opacity: isLoading ? 0.7 : 1
-        },
-
-        required: {
-            color: '#ff4d4f',
-            marginLeft: '2px'
-        }
-    };
-
-    return (
-        <div style={styles.container}>
-            {/* Embedded styles for focus */}
-            <style>{`
-                .reset-password-input:focus {
-                    border-color: #296bd5ff !important;
-                    box-shadow: 0 0 0 2px rgba(41, 107, 213, 0.2) !important;
-                }
-            `}</style>
-
-            {/* Left Panel */}
-            <div style={styles.leftPanel}>
-                <canvas ref={canvasRef} style={styles.canvas} />
-                <div style={styles.logoContainer}>
-                    <img
-                        src={`${process.env.PUBLIC_URL}/C_lab logo.png`}
-                        alt="Cirrus Labs Logo"
-                        style={styles.logo}
-                    />
-                    <div style={styles.subtitle}>
-                        IT Asset Management Dashboard
-                    </div>
-                </div>
-            </div>
-
-            {/* Right Panel */}
-            <div style={styles.rightPanel}>
-                <div style={styles.formContainer}>
-                    <h2 style={styles.heading}>Reset Your Password</h2>
-                    
-                    <form onSubmit={handleResetPassword}>
-                        {/* New Password Field */}
-                        <div style={styles.inputContainer}>
-                            <label style={styles.label}>
-                                New Password<span style={styles.required}>*</span>
-                            </label>
-                            <input
-                                type={showPassword ? 'text' : 'password'}
-                                style={styles.passwordInput}
-                                value={password}
-                                onChange={e => setPassword(e.target.value)}
-                                placeholder="Enter your new password"
-                                required={true}
-                                className="reset-password-input"
-                            />
-                            <span
-                                onClick={() => setShowPassword(!showPassword)}
-                                style={styles.eyeIcon}
-                            >
-                                {showPassword ? <EyeInvisibleOutlined /> : <EyeOutlined />}
-                            </span>
-                        </div>
-
-                        {/* Confirm Password Field */}
-                        <div style={styles.inputContainer}>
-                            <label style={styles.label}>
-                                Confirm Password<span style={styles.required}>*</span>
-                            </label>
-                            <input
-                                type={showConfirmPassword ? 'text' : 'password'}
-                                style={styles.passwordInput}
-                                value={confirmPassword}
-                                onChange={e => setConfirmPassword(e.target.value)}
-                                placeholder="Confirm your new password"
-                                required={true}
-                                className="reset-password-input"
-                            />
-                            <span
-                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                style={styles.eyeIcon}
-                            >
-                                {showConfirmPassword ? <EyeInvisibleOutlined /> : <EyeOutlined />}
-                            </span>
-                        </div>
-
-                        <div style={styles.error}>{error}</div>
-                        
-                        <button
-                            type="submit"
-                            style={styles.primaryButton}
-                            disabled={isLoading}
-                            onMouseEnter={() => setResetButtonHovered(true)}
-                            onMouseLeave={() => setResetButtonHovered(false)}
-                        >
-                            {isLoading ? 'Resetting Password...' : 'Reset Password'}
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    );
+const getAuthHeader = () => {
+  const token = localStorage.getItem('token');
+  return token ? { 'x-auth-token': token } : {};
 };
 
-export default ResetPasswordPage;
+const UserManagement = () => {
+  const [users, setUsers] = useState([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [form] = Form.useForm();
+  const [formEdit] = Form.useForm();
+  const [editModal, setEditModal] = useState({ visible: false, user: null });
+
+  // Fetch users from backend
+  const fetchUsers = useCallback(async () => {
+    try {
+      const res = await axios.get('http://localhost:5000/api/users', {
+        headers: getAuthHeader()
+      });
+      setUsers(res.data);
+    } catch (err) {
+      message.error(
+        err?.response?.data?.msg ||
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        'Failed to fetch users.'
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  // Show add modal
+  const showAddUserModal = () => {
+    form.resetFields();
+    setIsModalVisible(true);
+  };
+
+  // Add user handler
+  const handleAddUser = async (values) => {
+    try {
+      await axios.post(
+        'http://localhost:5000/api/users/create',
+        {
+          name: values.name,
+          email: values.email,
+          password: values.password,
+          role: values.role
+        },
+        { headers: getAuthHeader() }
+      );
+      message.success('User created successfully!');
+      setIsModalVisible(false);
+      fetchUsers();
+    } catch (err) {
+      message.error(
+        err?.response?.data?.msg ||
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        'Failed to create user.'
+      );
+    }
+  };
+
+  // Show edit modal
+  const showEditModal = (user) => {
+    setEditModal({ visible: true, user });
+    setTimeout(() => {
+      formEdit.setFieldsValue({
+        name: user.name,
+        email: user.email,
+        password: '',
+        role: user.role
+      });
+    }, 0);
+  };
+
+  // Edit user handler
+  const handleEditUser = async () => {
+    try {
+      const values = await formEdit.validateFields();
+      const payload = {
+        name: values.name,
+        email: values.email,
+        role: values.role
+      };
+      if (values.password && values.password.trim().length > 0) {
+        payload.password = values.password;
+      }
+      await axios.put(
+        `http://localhost:5000/api/users/${editModal.user._id}`,
+        payload,
+        { headers: getAuthHeader() }
+      );
+      message.success('User updated successfully!');
+      setEditModal({ visible: false, user: null });
+      fetchUsers();
+      formEdit.resetFields();
+    } catch (err) {
+      message.error(
+        err?.response?.data?.msg ||
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        'Failed to update user.'
+      );
+    }
+  };
+
+  // Delete user handler
+  const handleDeleteUser = async (userId) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/users/${userId}`, {
+        headers: getAuthHeader()
+      });
+      message.success('User deleted successfully');
+      fetchUsers();
+    } catch (err) {
+      message.error(
+        err?.response?.data?.msg ||
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        'Failed to delete user.'
+      );
+    }
+  };
+
+  // Table columns
+  const columns = [
+    {
+      title: 'Sl.',
+      key: 'sl',
+      render: (_, __, index) => index + 1,
+      width: 60,
+      align: 'center'
+    },
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
+      width: 150
+    },
+    {
+      title: 'Email',
+      dataIndex: 'email',
+      key: 'email',
+      width: 200
+    },
+    {
+      title: 'Role',
+      dataIndex: 'role',
+      key: 'role',
+      width:120
+    },
+    {
+      title: 'Edit',
+      key: 'edit',
+      align: 'center',
+      width: 80,
+      render: (_, record) => (
+        <Button
+          type="link"
+          icon={<EditOutlined />}
+          onClick={() => showEditModal(record)}
+        >
+          Edit
+        </Button>
+      )
+    },
+    {
+      title: 'Delete',
+      key: 'delete',
+      align: 'center',
+      width: 90,
+      render: (_, record) => (
+        <Popconfirm
+          title="Are you sure you want to delete this user?"
+          onConfirm={() => handleDeleteUser(record._id)}
+          okText="Yes"
+          cancelText="No"
+        >
+          <Button type="link" danger icon={<DeleteOutlined />}>
+            Delete
+          </Button>
+        </Popconfirm>
+      )
+    }
+  ];
+
+  return (
+    <Card>
+      <div
+        className="user-header"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 18
+        }}
+      >
+        <Title level={4} className="user-title" style={{ margin: 0 }}>
+          User Management
+        </Title>
+        <Button type="primary" icon={<PlusOutlined />} onClick={showAddUserModal}>
+          Add User
+        </Button>
+      </div>
+      <Table
+        columns={columns}
+        dataSource={users}
+        rowKey="_id"
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
+          pageSizeOptions: ['10', '20', '50', '100']
+        }}
+        className="user-table"
+      />
+
+      {/* Add User Modal */}
+      <Modal
+        title="Add New User"
+        open={isModalVisible}
+        onCancel={() => {
+          setIsModalVisible(false);
+          form.resetFields();
+        }}
+        footer={null}
+        destroyOnClose
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleAddUser}
+          autoComplete="off"
+        >
+          <Form.Item
+            name="name"
+            label="Name"
+            rules={[
+              { required: true, message: "Please enter the user's name" },
+              { min: 4, message: 'Name must be at least 4 characters' }
+            ]}
+          >
+            <Input autoComplete="off" />
+          </Form.Item>
+          <Form.Item
+            name="email"
+            label="Email"
+            rules={[
+              { required: true, type: 'email', message: "Please enter a valid email" },
+              {
+                validator: (_, value) => {
+                  if (!value) return Promise.resolve();
+                  const emailExists = users.some(
+                    u => u.email.toLowerCase() === value.toLowerCase()
+                  );
+                  return emailExists
+                    ? Promise.reject(new Error('Email already exists'))
+                    : Promise.resolve();
+                }
+              }
+            ]}
+          >
+            <Input autoComplete="off" />
+          </Form.Item>
+          <Form.Item
+            name="password"
+            label="Password"
+            rules={[
+              { required: true, min: 6, message: "Password must be at least 6 characters" }
+            ]}
+          >
+            <Input.Password autoComplete="new-password" />
+          </Form.Item>
+          <Form.Item
+            name="role"
+            label="Role"
+            rules={[{ required: true, message: "Please select a role" }]}
+          >
+            <Select placeholder="Select a role">
+              {roles.map(r => (
+                <Option value={r.value} key={r.value}>
+                  {r.label}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button onClick={() => setIsModalVisible(false)}>Cancel</Button>
+              <Button type="primary" htmlType="submit">
+                Create User
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Edit User Modal */}
+      {/* Edit User Modal */}
+      <Modal
+        title="Edit User"
+        open={editModal.visible}
+        onCancel={() => {
+          setEditModal({ visible: false, user: null });
+          formEdit.resetFields();
+        }}
+        onOk={handleEditUser}
+        okText="Save"
+        cancelText="Cancel"
+        destroyOnClose
+      >
+        {editModal.user && (
+          <Form
+            form={formEdit}
+            layout="vertical"
+            autoComplete="off"
+            initialValues={{
+              name: editModal.user.name,
+              email: editModal.user.email,
+              role: editModal.user.role
+            }}
+          >
+            <Form.Item
+              label="Name"
+              name="name"
+              rules={[
+                { required: true, message: "Please enter the user's name" },
+                { min: 4, message: 'Name must be at least 4 characters' }
+              ]}
+            >
+              <Input autoComplete="off" />
+            </Form.Item>
+            <Form.Item
+              label="Email"
+              name="email"
+              rules={[
+                { required: true, type: 'email', message: "Please enter a valid email" },
+                {
+                  validator: (_, value) => {
+                    if (!value) return Promise.resolve();
+                    // Exclude self from uniqueness check
+                    const editingId = editModal.user?._id;
+                    const emailExists = users.some(
+                      u => u.email.toLowerCase() === value.toLowerCase() && u._id !== editingId
+                    );
+                    return emailExists
+                      ? Promise.reject(new Error('Email already exists'))
+                      : Promise.resolve();
+                  }
+                }
+              ]}
+            >
+              <Input autoComplete="off" />
+            </Form.Item>
+            <Form.Item label="Password">
+              {/* Show stars, not editable */}
+              <Input.Password value="********" readOnly disabled style={{ color: '#aaa' }} />
+              <div style={{ color: '#d4380d', marginTop: '6px' }}>
+                You do not have rights to change the password.
+              </div>
+            </Form.Item>
+            <Form.Item
+              name="role"
+              label="Role"
+              rules={[{ required: true, message: "Please select a role" }]}
+            >
+              <Select placeholder="Select a role">
+                {roles.map(r => (
+                  <Option value={r.value} key={r.value}>
+                    {r.label}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Form>
+        )}
+      </Modal>
+    </Card>
+  );
+};
+
+export default UserManagement;
