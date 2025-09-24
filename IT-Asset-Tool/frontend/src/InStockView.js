@@ -94,6 +94,7 @@ const getHardwareRows = (asset) => [
   ['Status', asset.status || 'N/A'],
   ['Purchase Date', asset.purchaseDate ? moment(asset.purchaseDate).format('YYYY-MM-DD') : 'N/A'],
   ['Warranty Expiry', asset.warrantyInfo ? moment(asset.warrantyInfo).format('DD MMM YYYY') : 'N/A'],
+  ['Client', asset.client || 'N/A'],
 ];
 const getAssigneeRows = (asset) => [
   ['Assignee Name', asset.assigneeName || 'N/A'],
@@ -537,7 +538,7 @@ const InStockView = ({ user }) => {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="position" label="Position" rules={[{ required: true }]}>
+              <Form.Item name="position" label="Position" rules={[{ }]}>
                 <Input disabled={user?.role === "Viewer"} />
               </Form.Item>
             </Col>
@@ -555,7 +556,7 @@ const InStockView = ({ user }) => {
                 name="phoneNumber"
                 label="Phone Number"
                 rules={[
-                  { required: true, message: 'Phone number is required' },
+                  { message: 'Phone number is required' },
                   {
                     pattern: /^[0-9]{10,15}$/,
                     message: 'Phone number must be 10-15 digits only'
@@ -564,7 +565,7 @@ const InStockView = ({ user }) => {
               >
                 <Input
                   disabled={user?.role === "Viewer"}
-                  placeholder="Enter phone number (10-15 digits)"
+                  placeholder="Enter phone number"
                   maxLength={15}
                   onKeyPress={(e) => {
                     // Allow only digits
@@ -581,7 +582,7 @@ const InStockView = ({ user }) => {
               </Form.Item>
             </Col>
             <Col span={24}>
-              <Form.Item name="department" label="Department" rules={[{ required: true }]}>
+              <Form.Item name="department" label="Department" rules={[{}]}>
                 <Input disabled={user?.role === "Viewer"} />
               </Form.Item>
             </Col>
@@ -635,6 +636,15 @@ const InStockView = ({ user }) => {
               <Form.Item name="location" label="Location" rules={[{ required: true }]}>
                 <Select disabled={user?.role === "Viewer"}>
                   {locationOptions.map(opt => <Option key={opt} value={opt}>{opt}</Option>)}
+                </Select>
+              </Form.Item>
+            </Col>
+           <Col span={12}>
+             <Form.Item name="client" label="Client" rules={[{ required: true, message: 'Please select a client!' }]}>
+               <Select disabled={user?.role === "Viewer"}>
+                      <Option value="Deloitte">Deloitte</Option>
+                      <Option value="Lionguard">Lionguard</Option>
+                      <Option value="Cognizant">Cognizant</Option>
                 </Select>
               </Form.Item>
             </Col>

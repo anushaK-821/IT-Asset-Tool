@@ -173,7 +173,11 @@ const EquipmentSchema = new mongoose.Schema({
     isDeleted: {
         type: Boolean,
         default: false
-    }
+    },
+    client: {
+  type: String,
+  enum: ['Deloitte', 'Lionguard', 'Cognizant'],
+  },
 }, { timestamps: true });
 
 const User = mongoose.model('User', UserSchema);
@@ -789,7 +793,8 @@ app.post('/api/equipment', [auth, requireRole(['Admin', 'Editor'])], async (req,
         warrantyInfo: parsedWarrantyInfo,
         location, comment, assigneeName, position,
         employeeEmail, phoneNumber, department, damageDescription, purchasePrice,
-        purchaseDate: parsedPurchaseDate
+        purchaseDate: parsedPurchaseDate,
+        client: req.body.client
     });
 
     try {

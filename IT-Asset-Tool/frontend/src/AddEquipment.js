@@ -184,9 +184,22 @@ const AddEquipment = () => {
                 </Col>
                 <Col span={12}>
                   <Form.Item
+                    name="client"
+                    label="Client"
+                    style={{ marginBottom: 12 }}
+                  >
+                    <Select placeholder="Select Client">
+                      <Option value="Deloitte">Deloitte</Option>
+                      <Option value="Lionguard">Lionguard</Option>
+                      <Option value="Cognizant">Cognizant</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
                     name="purchaseDate"
                     label="Date of Purchase"
-                    rules={[{ required: false }]}
+                    rules={[{ required: true }]}
                     style={{ marginBottom: 12 }}
                   >
                     <DatePicker style={{ width: '100%' }} />
@@ -251,6 +264,7 @@ const AddEquipment = () => {
                   <Form.Item
                     name="warrantyInfo"
                     label="Warranty Expiry Date"
+                    rules={[{ required: true}]}
                     style={{ marginBottom: 12 }}
                   >
                     <DatePicker style={{ width: '100%' }} />
