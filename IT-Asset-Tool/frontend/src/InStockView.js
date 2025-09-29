@@ -556,7 +556,6 @@ const InStockView = ({ user }) => {
                 name="phoneNumber"
                 label="Phone Number"
                 rules={[
-                  { message: 'Phone number is required' },
                   {
                     pattern: /^[0-9]{10,15}$/,
                     message: 'Phone number must be 10-15 digits only'
