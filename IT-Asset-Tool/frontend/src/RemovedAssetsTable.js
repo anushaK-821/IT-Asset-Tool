@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Spin, Alert, Typography, Input, Space, Tag } from 'antd';
+import { Table, Spin, Alert, Typography, Input, Space, Tag, Button, Modal, message, Popconfirm } from 'antd';
+import { DeleteOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 import moment from 'moment';
@@ -54,9 +55,9 @@ const RemovedAssetsTable = () => {
             // Debug: See data format
             console.log("API DATA:", response.data);
 
-            // Change this to originalStatus if that's what your data uses
+            // Filter for removed assets and exclude soft-deleted items as safety check
             const receivedData = response.data.filter(
-                item => (item.status && item.status.toLowerCase() === 'removed')
+                item => (item.status && item.status.toLowerCase() === 'removed') && !item.isDeleted
             );
             setAllRemovedAssets(receivedData);
             setFilteredRemovedAssets(receivedData);
@@ -98,6 +99,27 @@ const RemovedAssetsTable = () => {
         }));
     };
 
+    const handleDelete = async (record) => {
+        try {
+            await axios.delete(`${API_BASE_URL}/api/equipment/${record._id}`, {
+                headers: getAuthHeader(),
+            });
+            message.success('Asset deleted successfully');
+            // Remove the deleted item from both arrays
+            const updatedAssets = allRemovedAssets.filter(item => item._id !== record._id);
+            const updatedFilteredAssets = filteredRemovedAssets.filter(item => item._id !== record._id);
+            setAllRemovedAssets(updatedAssets);
+            setFilteredRemovedAssets(updatedFilteredAssets);
+        } catch (error) {
+            console.error('Error deleting asset:', error);
+            if (error.response?.status === 403) {
+                message.error('Access denied. Admin role required.');
+            } else {
+                message.error('Failed to delete asset. Please try again.');
+            }
+        }
+    };
+
     
     const columns = [
         {
@@ -127,11 +149,7 @@ const RemovedAssetsTable = () => {
             dataIndex: 'serialNumber',
             key: 'serialNumber',
         },
-        {
-            title: 'Assignee Name',
-            dataIndex: 'assigneeName',
-            key: 'assigneeName',
-        },
+      
         {
             title: 'Removal Date',
             dataIndex: 'updatedAt',
@@ -143,6 +161,31 @@ const RemovedAssetsTable = () => {
             dataIndex: 'comment',
             key: 'comment',
             ellipsis: true,
+        },
+        {
+            title: 'Actions',
+            key: 'actions',
+            width: 100,
+            render: (_, record) => (
+                <Popconfirm
+                    title="Delete Asset"
+                    description="Are you sure you want to permanently delete this asset? This action cannot be undone."
+                    onConfirm={() => handleDelete(record)}
+                    okText="Yes, Delete"
+                    cancelText="Cancel"
+                    okButtonProps={{ danger: true }}
+                >
+                    <Button
+                        type="text"
+                        danger
+                        icon={<DeleteOutlined />}
+                        size="small"
+                        title="Delete Asset"
+                    >
+                        Delete
+                    </Button>
+                </Popconfirm>
+            ),
         }
     ];
 
