@@ -87,22 +87,96 @@ const summarizeByCategory = (assets) => {
     return Object.values(categorySummary).sort((a, b) => a.category.localeCompare(b.category));
 };
 
+// --- Helper function for grouping and counting by location ---
+const summarizeByLocation = (assets) => {
+    const locationSummary = {};
+
+    assets.forEach(asset => {
+        const location = asset.location || 'Uncategorized';
+        if (!locationSummary[location]) {
+            locationSummary[location] = {
+                location: location,
+                inUse: 0,
+                inStock: 0,
+                damaged: 0,
+                eWaste: 0,
+                removed: 0,
+                total: 0
+            };
+        }
+
+        switch (asset.status) {
+            case 'In Use':
+                locationSummary[location].inUse++;
+                break;
+            case 'In Stock':
+                locationSummary[location].inStock++;
+                break;
+            case 'Damaged':
+                locationSummary[location].damaged++;
+                break;
+            case 'E-Waste':
+                locationSummary[location].eWaste++;
+                break;
+            case 'Removed':
+                locationSummary[location].removed++;
+                break;
+            default:
+                break;
+        }
+        locationSummary[location].total++;
+    });
+
+    // Explicitly add desired locations to ensure they always show up, even with 0 items
+    const desiredLocations = ['Bangalore', 'Mangalore', 'Hyderabad', 'USA', 'Canada'];
+    desiredLocations.forEach(loc => {
+        if (!locationSummary[loc]) {
+            locationSummary[loc] = {
+                location: loc,
+                inUse: 0,
+                inStock: 0,
+                damaged: 0,
+                eWaste: 0,
+                removed: 0,
+                total: 0
+            };
+        }
+    });
+
+    return Object.values(locationSummary).sort((a, b) => a.location.localeCompare(b.location));
+};
+
 // Helper to get icon based on category name
 const getCategoryIcon = (category) => {
     switch (category) {
         case 'Computer':
         case 'Laptop':
-            return <LaptopOutlined style={{ fontSize: '48px', color: '#4A90E2' }} />;
+            return <LaptopOutlined style={{ fontSize: '32px', color: '#4A90E2' }} />;
         case 'Headset':
-            return <AudioOutlined style={{ fontSize: '48px', color: '#4A90E2' }} />;
+            return <AudioOutlined style={{ fontSize: '32px', color: '#4A90E2' }} />;
         case 'Mouse':
-            return <AimOutlined style={{ fontSize: '48px', color: '#4A90E2' }} />;
+            return <AimOutlined style={{ fontSize: '32px', color: '#4A90E2' }} />;
         case 'Keyboard':
-            return <BorderlessTableOutlined style={{ fontSize: '48px', color: '#4A90E2' }} />;
+            return <BorderlessTableOutlined style={{ fontSize: '32px', color: '#4A90E2' }} />;
         case 'Monitor':
-            return <DesktopOutlined style={{ fontSize: '48px', color: '#4A90E2' }} />;
+            return <DesktopOutlined style={{ fontSize: '32px', color: '#4A90E2' }} />;
         default:
-            return <DatabaseOutlined style={{ fontSize: '48px', color: '#888' }} />;
+            return <DatabaseOutlined style={{ fontSize: '32px', color: '#888' }} />;
+    }
+};
+
+// Helper to get icon based on location name
+const getLocationIcon = (location) => {
+    switch (location) {
+        case 'Bangalore':
+        case 'Mangalore':
+        case 'Hyderabad':
+            return <DatabaseOutlined style={{ fontSize: '32px', color: '#52C41A' }} />;
+        case 'USA':
+        case 'Canada':
+            return <DatabaseOutlined style={{ fontSize: '32px', color: '#1890FF' }} />;
+        default:
+            return <DatabaseOutlined style={{ fontSize: '32px', color: '#888' }} />;
     }
 };
 
@@ -116,6 +190,7 @@ const Dashboard = () => {
         removed: 0,
     });
     const [categoryAssetSummaries, setCategoryAssetSummaries] = useState([]);
+    const [locationAssetSummaries, setLocationAssetSummaries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [lastUpdated, setLastUpdated] = useState(null);
@@ -151,6 +226,9 @@ const Dashboard = () => {
             const groupedSummary = summarizeByCategory(allAssets);
             setCategoryAssetSummaries(groupedSummary);
 
+            const locationSummary = summarizeByLocation(allAssets);
+            setLocationAssetSummaries(locationSummary);
+
             setLastUpdated(new Date());
 
         } catch (err) {
@@ -180,72 +258,78 @@ const Dashboard = () => {
             {error && <Alert message="Error" description={error} type="error" showIcon style={{ marginBottom: '20px' }} />}
 
             {/* Header with Refresh Button */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <Title level={3} style={{ margin: 0 }}>Dashboard Overview</Title>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <Title level={4} style={{ margin: 0 }}>Dashboard Overview</Title>
                            </div>
 
             {/* Top Row for Overall Summary Statistics */}
-            <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+            <Row gutter={[8, 8]} style={{ marginBottom: '16px' }}>
                 <Col xs={24} sm={12} md={8} lg={6} xl={4}>
-                    <Card variant="outlined" hoverable>
+                    <Card variant="outlined" hoverable style={{ minHeight: '80px' }}>
                         <Statistic
                             title="Total Assets"
                             value={summaryData.totalAssets}
-                            prefix={<DatabaseOutlined style={{ color: '#4A90E2' }} />}
+                            prefix={<DatabaseOutlined style={{ color: '#4A90E2', fontSize: '16px' }} />}
+                            valueStyle={{ fontSize: '20px' }}
                         />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} md={8} lg={6} xl={4}>
-                    <Card variant="outlined" hoverable>
+                    <Card variant="outlined" hoverable style={{ minHeight: '80px' }}>
                         <Statistic
                             title="In Use"
                             value={summaryData.inUse}
-                            prefix={<ToolOutlined style={{ color: '#7ED321' }} />}
+                            prefix={<ToolOutlined style={{ color: '#7ED321', fontSize: '16px' }} />}
+                            valueStyle={{ fontSize: '20px' }}
                         />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} md={8} lg={6} xl={4}>
-                    <Card variant="outlined" hoverable>
+                    <Card variant="outlined" hoverable style={{ minHeight: '80px' }}>
                         <Statistic
                             title="In Stock"
                             value={summaryData.inStock}
-                            prefix={<CheckCircleOutlined style={{ color: '#FA8C16' }} />}
+                            prefix={<CheckCircleOutlined style={{ color: '#FA8C16', fontSize: '16px' }} />}
+                            valueStyle={{ fontSize: '20px' }}
                         />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} md={8} lg={6} xl={4}>
-                    <Card variant="outlined" hoverable>
+                    <Card variant="outlined" hoverable style={{ minHeight: '80px' }}>
                         <Statistic
                             title="Damaged"
                             value={summaryData.damaged}
-                            prefix={<WarningOutlined style={{ color: '#D0021B' }} />}
+                            prefix={<WarningOutlined style={{ color: '#D0021B', fontSize: '16px' }} />}
+                            valueStyle={{ fontSize: '20px' }}
                         />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} md={8} lg={6} xl={4}>
-                    <Card variant="outlined" hoverable>
+                    <Card variant="outlined" hoverable style={{ minHeight: '80px' }}>
                         <Statistic
                             title="E-Waste"
                             value={summaryData.eWaste}
-                            prefix={<DeleteOutlined style={{ color: '#8B572A' }} />}
+                            prefix={<DeleteOutlined style={{ color: '#8B572A', fontSize: '16px' }} />}
+                            valueStyle={{ fontSize: '20px' }}
                         />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} md={8} lg={6} xl={4}>
-                    <Card variant="outlined" hoverable>
+                    <Card variant="outlined" hoverable style={{ minHeight: '80px' }}>
                         <Statistic
                             title="Removed"
                             value={summaryData.removed}
-                            prefix={<MinusCircleOutlined style={{ color: getStatusColor('Removed') }} />}
+                            prefix={<MinusCircleOutlined style={{ color: getStatusColor('Removed'), fontSize: '16px' }} />}
+                            valueStyle={{ fontSize: '20px' }}
                         />
                     </Card>
                 </Col>
             </Row>
 
-            <Title level={4} style={{ marginBottom: '24px', marginTop: '32px' }}>Assets by Category</Title>
+            <Title level={5} style={{ marginBottom: '12px', marginTop: '20px' }}>Assets by Category</Title>
 
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '50px' }}>
+                <div style={{ textAlign: 'center', padding: '20px' }}>
                     <Spin size="large" tip="Loading Categories..." />
                 </div>
             ) : categoryAssetSummaries.length === 0 ? (
@@ -256,23 +340,24 @@ const Dashboard = () => {
                     showIcon
                 />
             ) : (
-                <Row gutter={[16, 16]}>
+                <Row gutter={[8, 8]} style={{ marginBottom: '16px' }}>
                     {categoryAssetSummaries.map((categoryData) => (
                         <Col key={categoryData.category} xs={24} sm={12} md={8} lg={6} xl={4}>
                             <Card
                                 title={
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <Text strong style={{ fontSize: '16px' }}>
+                                        <Text strong style={{ fontSize: '14px' }}>
                                             {categoryData.category} ({categoryData.total})
                                         </Text>
                                     </div>
                                 }
                                 hoverable
-                                styles={{ body: { padding: '16px' } }}
+                                styles={{ body: { padding: '12px' } }}
                                 variant="outlined"
+                                style={{ minHeight: '160px' }}
                             >
-                                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
-                                    <div style={{ width: '40%', display: 'flex', justifyContent: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                                    <div style={{ width: '35%', display: 'flex', justifyContent: 'center' }}>
                                         {getCategoryIcon(categoryData.category)}
                                     </div>
                                     <List
@@ -285,16 +370,78 @@ const Dashboard = () => {
                                             { label: 'Removed', count: categoryData.removed, color: getStatusColor('Removed') },
                                         ]}
                                         renderItem={item => (
-                                            <List.Item style={{ padding: '4px 0', borderBottom: 'none' }}>
+                                            <List.Item style={{ padding: '2px 0', borderBottom: 'none' }}>
                                                 <List.Item.Meta
-                                                    title={<Text style={{ color: item.color, fontSize: '12px' }}>{item.label}</Text>}
+                                                    title={<Text style={{ color: item.color, fontSize: '11px' }}>{item.label}</Text>}
                                                 />
                                                 <div>
-                                                    <Text style={{ fontWeight: 'bold', fontSize: '12px', color: item.color }}>{item.count}</Text>
+                                                    <Text style={{ fontWeight: 'bold', fontSize: '11px', color: item.color }}>{item.count}</Text>
                                                 </div>
                                             </List.Item>
                                         )}
-                                        style={{ padding: 0, width: '60%' }}
+                                        style={{ padding: 0, width: '65%' }}
+                                    />
+                                </div>
+                            </Card>
+                        </Col>
+                    ))}
+                </Row>
+            )}
+
+            <Title level={5} style={{ marginBottom: '12px', marginTop: '20px' }}>Assets by Location</Title>
+
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '20px' }}>
+                    <Spin size="large" tip="Loading Locations..." />
+                </div>
+            ) : locationAssetSummaries.length === 0 ? (
+                <Alert
+                    message="No Asset Locations Found"
+                    description="It looks like there are no assets with location data yet or data is not available."
+                    type="info"
+                    showIcon
+                />
+            ) : (
+                <Row gutter={[8, 8]}>
+                    {locationAssetSummaries.map((locationData) => (
+                        <Col key={locationData.location} xs={24} sm={12} md={8} lg={6} xl={4}>
+                            <Card
+                                title={
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <Text strong style={{ fontSize: '14px' }}>
+                                            {locationData.location} ({locationData.total})
+                                        </Text>
+                                    </div>
+                                }
+                                hoverable
+                                styles={{ body: { padding: '12px' } }}
+                                variant="outlined"
+                                style={{ minHeight: '160px' }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                                    <div style={{ width: '35%', display: 'flex', justifyContent: 'center' }}>
+                                        {getLocationIcon(locationData.location)}
+                                    </div>
+                                    <List
+                                        itemLayout="horizontal"
+                                        dataSource={[
+                                            { label: 'In Use', count: locationData.inUse, color: getStatusColor('In Use') },
+                                            { label: 'In Stock', count: locationData.inStock, color: getStatusColor('In Stock') },
+                                            { label: 'Damaged', count: locationData.damaged, color: getStatusColor('Damaged') },
+                                            { label: 'E-Waste', count: locationData.eWaste, color: getStatusColor('E-Waste') },
+                                            { label: 'Removed', count: locationData.removed, color: getStatusColor('Removed') },
+                                        ]}
+                                        renderItem={item => (
+                                            <List.Item style={{ padding: '2px 0', borderBottom: 'none' }}>
+                                                <List.Item.Meta
+                                                    title={<Text style={{ color: item.color, fontSize: '11px' }}>{item.label}</Text>}
+                                                />
+                                                <div>
+                                                    <Text style={{ fontWeight: 'bold', fontSize: '11px', color: item.color }}>{item.count}</Text>
+                                                </div>
+                                            </List.Item>
+                                        )}
+                                        style={{ padding: 0, width: '65%' }}
                                     />
                                 </div>
                             </Card>
